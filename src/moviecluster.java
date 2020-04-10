@@ -1,7 +1,6 @@
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Set;
 
 public class moviecluster {
@@ -11,6 +10,11 @@ public class moviecluster {
     static int totalMovies;
     static HashMap<Integer, HashMap<Integer, Double>> correlatedMovies = new HashMap<>();
     static Set<Set<Movie>> correlationClustering;
+    static double[][] corrMovies;
+    static boolean[][] usersOnMovies;
+    static int movieMaxId;
+    static int userMaxId;
+
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
         ArrayList<Movie> subset;
@@ -21,6 +25,8 @@ public class moviecluster {
         if (toReload == 1) {
             Parser.parseMovies(folder + "/movies.dat");
             Parser.parseUsers(folder + "/users.dat");
+            corrMovies = new double[movieMaxId][movieMaxId];
+            usersOnMovies = new boolean[userMaxId][movieMaxId];
             Parser.parseRating(folder + "/ratings.dat");
             filterUnwatchedMovies();
             totalUsers = users.size();
@@ -35,24 +41,19 @@ public class moviecluster {
             totalUsers = users.size();
             totalMovies = movies.size();
         }
-        subset = Parser.getMoviesSubset(args[2]);
+        subset = Parser.getMoviesSubset(args[2]); // new ArrayList<>(movies.values());
 
         if (runCorrelationAlgorithm == 1)
             correlationClustering = CorrelationClustering.cluster(subset);
 
         int movieCounter = 0;
         for (Set<Movie> set : correlationClustering) {
-            for (Movie mov : set) {
-                movieCounter += 1;
-            }
+            movieCounter += set.size();
         }
 
-        double correlationCost = CostCalculator.calculateCluster(correlationClustering);
         System.out.println("number of movies in cluster : " + movieCounter);
-        System.out.println("total movies :" + totalMovies);
-        System.out.println("Cost : " + correlationCost);
-
-        System.out.println("hey");
+        System.out.println("total movies of cluster:" + subset.size());
+        Printer.printClusters(correlationClustering);
 
     }
 
@@ -81,38 +82,30 @@ public class moviecluster {
         double usersFactor = 1 / (double) (totalUsers + 1);
         double moviesFactor = 2 / (double) (totalMovies * (totalMovies - 1));
         for (Movie firstMovie : movies.values()) {
-            correlatedMovies.put(firstMovie.id, new HashMap<>());
             for (Movie secondMovie : movies.values()) {
                 if (firstMovie.equals(secondMovie))
                     continue;
                 double correlatedProbability = getCorrelatedProbability(secondMovie.id, firstMovie.id);
-                if (correlatedProbability != -1) {
-                    correlatedMovies.get(firstMovie.id).put(secondMovie.id, correlatedProbability);
+                if (correlatedProbability != 0.0) {
+                    corrMovies[firstMovie.id][secondMovie.id] = correlatedProbability;
                     continue;
                 }
-                Set<Integer> userIntersection = new HashSet<>(firstMovie.users);
                 double aggregateCorrelation = 0;
-                userIntersection.retainAll(secondMovie.users); // intersect users that have seen both movies
-                for (Integer user : userIntersection) {
-                    int numberOfWatchedMovies = users.get(user).numberOfWathcedMovies();
-                    aggregateCorrelation += 2 / (double) (numberOfWatchedMovies * (numberOfWatchedMovies - 1));
+                for (Rating rate : firstMovie.rating) {
+                    if (usersOnMovies[rate.userId][secondMovie.id]) {
+                        int numberOfWatchedMovies = users.get(rate.userId).numberOfWathcedMovies();
+                        aggregateCorrelation += 2 / (double) (numberOfWatchedMovies * (numberOfWatchedMovies - 1));
+                    }
                 }
                 correlatedProbability = usersFactor * (moviesFactor + aggregateCorrelation);
-                correlatedMovies.get(firstMovie.id).put(secondMovie.id, correlatedProbability);
+                corrMovies[firstMovie.id][secondMovie.id] = correlatedProbability;
             }
         }
     }
 
-    public static boolean seekPair(int a, int b) {
-        if (correlatedMovies.get(a) == null)
-            return false;
-        return correlatedMovies.get(a).get(b) != null;
-    }
 
     public static double getCorrelatedProbability(int a, int b) {
-        if (seekPair(a, b))
-            return correlatedMovies.get(a).get(b);
-        return -1;
+        return corrMovies[a][b];
     }
 
 
@@ -120,7 +113,7 @@ public class moviecluster {
         FileOutputStream fos1 =
                 new FileOutputStream("correlation.ser");
         ObjectOutputStream oos1 = new ObjectOutputStream(fos1);
-        oos1.writeObject(correlatedMovies);
+        oos1.writeObject(corrMovies);
         oos1.close();
         fos1.close();
 
@@ -143,7 +136,7 @@ public class moviecluster {
     public static void readFiles() throws IOException, ClassNotFoundException {
         FileInputStream fis1 = new FileInputStream("correlation.ser");
         ObjectInputStream ois1 = new ObjectInputStream(fis1);
-        correlatedMovies = (HashMap) ois1.readObject();
+        corrMovies = (double[][]) ois1.readObject();
         ois1.close();
         fis1.close();
 

@@ -26,7 +26,7 @@ public class CostCalculator {
                     cost += (1 / (size - 1)) * Math.log(1 / correlation);
                 }
             }
-            return cost;
+            return (cost / 2);
         }
     }
 }
