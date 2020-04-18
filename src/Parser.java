@@ -17,6 +17,7 @@ class Parser {
             Movie movie = new Movie(id, name, year, movieStr[2]);
             moviecluster.movies.put(id,movie);
             line = br.readLine();
+            moviecluster.movieMaxId = movie.id +1;
         }
 
         br.close();
@@ -41,6 +42,8 @@ class Parser {
             User user = new User(id, gender, age, occupation, zipCode);
             moviecluster.users.put(id,user);
             line = br.readLine();
+            moviecluster.userMaxId = user.id +1;
+
         }
 
         br.close();
@@ -58,6 +61,7 @@ class Parser {
             String[] ratingStr = line.split("::");
             int userId = Integer.parseInt(ratingStr[0]);
             int movieId = Integer.parseInt(ratingStr[1]);
+            moviecluster.usersOnMovies[userId][movieId] = true;
             int rate = Integer.parseInt(ratingStr[2]);
             int timestamp = Integer.parseInt(ratingStr[3]);
             Rating rating = new Rating(userId,movieId,rate,timestamp);
