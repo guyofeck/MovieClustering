@@ -3,12 +3,13 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class CorrelationClustering {
+public class MultiCorrelationClustering {
     static Set<Set<Movie>> clusters = new HashSet<>();
 
     public static Set<Set<Movie>> cluster(Collection<Movie> toCluster) {
         ArrayList<Movie> cluster = new ArrayList<>(toCluster);
         buildCluster(cluster);
+
         return clusters;
     }
 
@@ -22,7 +23,7 @@ public class CorrelationClustering {
         toAdd.add(pivot);
         cluster.remove(pivot);
         for (Movie movie : cluster) {
-            if (arePositiveCorrelated(pivot, movie))
+            if (arePositiveCorrelatedToEntireCluster(toAdd, movie))
                 toAdd.add(movie);
             else
                 theRest.add(movie);
@@ -31,7 +32,13 @@ public class CorrelationClustering {
         buildCluster(theRest);
     }
 
-    private static boolean arePositiveCorrelated(Movie movieA, Movie movieB) {
-        return moviecluster.getCorrelatedProbability(movieA.id, movieB.id) > movieA.probability * movieB.probability;
+    private static boolean arePositiveCorrelatedToEntireCluster(Set<Movie> movieSet, Movie subjectMovie) {
+        double independentProbability = 0;
+        double correlatedProbability = 0;
+        for (Movie element : movieSet) {
+            independentProbability += Math.log(1 / (element.probability * subjectMovie.probability));
+            correlatedProbability += Math.log(1 / moviecluster.getCorrelatedProbability(subjectMovie.id, element.id));
+        }
+        return correlatedProbability < independentProbability;
     }
 }

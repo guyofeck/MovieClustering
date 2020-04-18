@@ -37,10 +37,6 @@ public class Movie implements Serializable {
         return id + " " + name;
     }
 
-    public int totalViews() {
-        return rating.size();
-    }
-
     public void setProbability(double probability) {
         this.probability = probability;
     }
@@ -59,7 +55,6 @@ public class Movie implements Serializable {
         for (String movieStr : stringArray) {
             movieGenre.add(genreToEnum(movieStr));
         }
-
         return movieGenre;
     }
 
