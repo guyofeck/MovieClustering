@@ -33,12 +33,11 @@ public class MultiCorrelationClustering {
     }
 
     private static boolean arePositiveCorrelatedToEntireCluster(Set<Movie> movieSet, Movie subjectMovie) {
-        double independentProbability = 0;
-        double correlatedProbability = 0;
         for (Movie element : movieSet) {
-            independentProbability += Math.log(1 / (element.probability * subjectMovie.probability));
-            correlatedProbability += Math.log(1 / moviecluster.getCorrelatedProbability(subjectMovie.id, element.id));
+            if(moviecluster.getCorrelatedProbability(element.id, subjectMovie.id) < element.probability * subjectMovie.probability){
+                return false;
+            }
         }
-        return correlatedProbability < independentProbability;
+        return true;
     }
 }
