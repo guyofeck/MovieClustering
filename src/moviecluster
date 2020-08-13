@@ -1,0 +1,8 @@
+#!/bin/bash
+
+export PATH="$PATH:."
+FOLDER=${1}
+ALGORITHM_TYPE=${2}
+MOVIES_SUBSET=${3}
+
+java -jar ./movieCluster.jar ${FOLDER} ${ALGORITHM_TYPE} ${MOVIES_SUBSET}
